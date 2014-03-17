@@ -1,0 +1,40 @@
+* {
+    margin: 0;
+}
+html, body {
+    height: 100%;
+}
+
+h1{
+	font-size: 20px;
+}
+
+h2{
+	font-size: 18px;
+}
+
+p, th, td{
+font-size: 12px;
+text-align: center;
+}
+
+.modal-header, .modal-footer {
+padding: 5px;
+}
+
+.modal-body{
+	padding-top: 5px;
+	padding-bottom: 5px;
+}
+
+}
+.footer, .push {
+    height: 60px; /* .push must be the same height as .footer */
+}
+
+.container {
+    min-height: 100%;
+    height: auto !important;
+    height: 100%;
+    margin: 0 auto -60px; /* the bottom margin is the negative value of the footer's height */
+}
