@@ -19,10 +19,46 @@
 
 <!--header -->
 
+<header class="bar bar-nav">
+    <a class="icon icon-left-nav pull-left"></a>
+    <a class="icon icon-compose pull-right"></a>
+    <h1 class="title">Ratchet</h1>
+</header>
+
 <!--Main content -->
+
+<div class="content">
+    <p class="content-padded">Check out some Ratchet resources:</p>
+    <div class="card">
+        <ul class="table-view">
+            <li class="table-view-cell">
+                <a class="push-right" >
+                    <strong>Hvad er væddemålet?</strong>
+                </a>
+            </li>
+            <li class="table-view-cell">
+                <a class="push-right">
+                    <strong>Total number of bets: {{bets.length}}</strong>
+                </a>
+            </li>
+            <li class="table-view-cell">
+                <a class="push-right">
+                    <strong>Hvem har du lavet væddemålet med?</strong>
+                </a>
+            </li>
+            <li class="table-view-cell">
+                <a class="push-right">
+                    <strong>user: {{email}}</strong>
+                    <p bet-list bets= 'bets' bet='item' ng-repeat="item in bets" ng-click= 'setSelected(item)' action='setSelected(selectedBet)' data-toggle="modal" data-target="#inspectedBet"  ></p>
+                </a>
+            </li>
+        </ul>
+    </div>
+</div>
+
+
 <div class="container">
 
-    <h1 class="text-center">BetApp</h1>
     <table class="table table-hover">
         <thead>
         <tr>
@@ -31,7 +67,7 @@
         </tr>
         </thead>
         <tbody>
-        <tr bet-list bets= 'bets' bet='item' ng-repeat="item in bets" ng-click= 'setSelected(item)' action='setSelected(selectedBet)' data-toggle="modal" data-target="#inspectedBet" >
+        <tr >
         </tr>
         </tbody>
     </table>
@@ -42,17 +78,50 @@
 </div>
 <!--end main content -->
 <!-- Footer -->
-<div class="footer push ">
+
+<nav class="bar bar-tab">
+    <a class="tab-item active" href="#">
+        <span class="icon icon-home"></span>
+        <span class="tab-label">Home</span>
+    </a>
+    <a class="tab-item" href="#">
+        <span class="icon icon-person"></span>
+        <span class="tab-label">Profile</span>
+    </a>
+    <a class="tab-item" href="#">
+        <span class="icon icon-star-filled"></span>
+        <span class="tab-label">Favorites</span>
+    </a>
+    <a class="tab-item" href="#">
+        <span class="icon icon-search"></span>
+        <span class="tab-label">Search</span>
+    </a>
+    <a class="tab-item" href="#">
+        <span class="icon icon-gear"></span>
+        <span class="tab-label">Settings</span>
+    </a>
+</nav>
+
+
+<!--<div class="footer push ">
     <div class="front-buttons footer push text-center">
         <button type="button" class="btn btn-lg btn-success" id="new-bet-btn" data-toggle="modal" data-target="#new-bet-mod">New Bet</button>
         <button type="button" class="btn btn-lg btn-warning" id="audio-bet-btn">I'm Drunk</button>
     </div>
-</div>
+</div>-->
 <!-- end footer -->
 
 
 <!-- -------------------------------------------------------------- -->
 <!-- Bootstrap Modal for new-bet-btn -->
+
+    <header class="bar bar-nav">
+        <a class="icon icon-close pull-right" href="#myModalexample"></a>
+        <h1 class="title">Modal</h1>
+    </header>
+</div>
+
+
 <div class="modal fade" id="new-bet-mod" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
