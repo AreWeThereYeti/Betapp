@@ -8,234 +8,194 @@
     <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width, height=device-height, target-densitydpi=device-dpi" />
 
     <link rel="stylesheet" type="text/css" href="css/index.css" />
-    <link rel="stylesheet" type="text/css" href="css/ratchet.min.css" />
-    <link rel="stylesheet" type="text/css" href="css/ratchet-theme-ios.min.css" />
-
+    <link rel="stylesheet" type="text/css" href="css/mobile-angular-ui-base.min.css" />
+    <link rel="stylesheet" type="text/css" href="css/mobile-angular-ui-desktop.min.css" />
+    <link rel="stylesheet" type="text/css" href="css/mobile-angular-ui-print.min.css" />
 
     <title>BetBox</title>
 </head>
 
-<body ng-controller='AppCtrl'>
+<body ng-controller="AppCtrl">
 
-<!--header -->
 
-<header class="bar bar-nav">
-    <a class="icon icon-left-nav pull-left"></a>
-    <a class="icon icon-compose pull-right"></a>
-    <h1 class="title">Ratchet</h1>
-</header>
+<!-- NEW BET OVERLAY -->
 
-<!--Main content -->
+<div class="overlay ng-scope" id="new-bet-mod" toggleable="" parent-active-class="overlay-in" active-class="overlay-show">
+    <div class="overlay-inner">
+        <div class="overlay-background"></div>
+        <div class="overlay-content">
+            <div class="overlay-body">
 
-<div class="content">
-    <p class="content-padded">Check out some Ratchet resources:</p>
-    <div class="card">
-        <ul class="table-view">
-            <li class="table-view-cell">
-                <a class="push-right" >
-                    <strong>Hvad er væddemålet?</strong>
-                </a>
-            </li>
-            <li class="table-view-cell">
-                <a class="push-right">
-                    <strong>Total number of bets: {{bets.length}}</strong>
-                </a>
-            </li>
-            <li class="table-view-cell">
-                <a class="push-right">
-                    <strong>Hvem har du lavet væddemålet med?</strong>
-                </a>
-            </li>
-            <li class="table-view-cell">
-                <a class="push-right">
-                    <strong>user: {{email}}</strong>
-                    <p bet-list bets= 'bets' bet='item' ng-repeat="item in bets" ng-click= 'setSelected(item)' action='setSelected(selectedBet)' data-toggle="modal" data-target="#inspectedBet"  ></p>
-                </a>
-            </li>
-        </ul>
+                <h4 class="overlay-title">New Bet</h4>
+                <div class="form-group container-fluid">
+                    <div class="row">
+                        <div class="col-sm-10">
+                            <textarea type="text" ng-model="bets.bet" placeholder="What's your bet?" rows="4" bs-input="" class="ng-scope ng-pristine ng-valid form-control"></textarea>
+                            <input type="text" placeholder="Who you betting?" ng-model="bets.name" label="" bs-input="" class="ng-pristine ng-valid needsclick form-control">
+                        </div>
+                    </div>
+                </div>
+                <p>
+                    <span ng-show="newBetForm.$invalid && newBetForm.$dirty">
+			      		Both bet content and participants fields are required.
+			      	</span>
+                </p>
+                <p toggle="off" bubble="" target="new-bet-mod">
+                    <span class="btn btn-primary" ng-disabled="newBetForm.$invalid" ng-click="SaveBet()" >Save Bet</span>
+                    <span class="btn btn-default" ng-click="cancelBet()" >Cancel</span>
+                </p>
+
+            </div>
+        </div>
     </div>
 </div>
+<!-- END NEW BET OVERLAY -->
 
+<!-- USER LOGIN OVERLAY -->
 
-<div class="container">
+<div class="overlay ng-scope" id="validation_form" toggleable="" parent-active-class="overlay-in" active-class="overlay-show">
+    <div class="overlay-inner">
+        <div class="overlay-background"></div>
+        <div class="overlay-content">
+            <div class="overlay-body">
 
-    <table class="table table-hover">
-        <thead>
-        <tr>
-            <th width= "50%">Hvad er væddemålet?</th>
-            <th width= "50%" >Hvem har du lavet væddemålet med?</th>
-        </tr>
-        </thead>
-        <tbody>
-        <tr >
-        </tr>
-        </tbody>
-    </table>
-    <p>Total number of bets: {{bets.length}}</p>
-    <p>user: {{email}}</p>
+                <h4 class="overlay-title">New Bet</h4>
+                <div class="form-group container-fluid">
+                    <div class="row">
+                        <div class="col-sm-10">
+                            <input type="email" ng-model="user.mail" placeholder="Enter email" bs-input="" class="ng-scope ng-pristine ng-valid form-control" required/>
+                            <input type="password" class="ng-pristine ng-valid needsclick form-control" ng-minlength="4" ng-model="user.password" placeholder="Password" required />
 
-    <!-- bottom new-bet-buttons -->
-</div>
-<!--end main content -->
-<!-- Footer -->
-
-<nav class="bar bar-tab">
-    <a class="tab-item active" href="#">
-        <span class="icon icon-home"></span>
-        <span class="tab-label">Home</span>
-    </a>
-    <a class="tab-item" href="#">
-        <span class="icon icon-person"></span>
-        <span class="tab-label">Profile</span>
-    </a>
-    <a class="tab-item" href="#">
-        <span class="icon icon-star-filled"></span>
-        <span class="tab-label">Favorites</span>
-    </a>
-    <a class="tab-item" href="#">
-        <span class="icon icon-search"></span>
-        <span class="tab-label">Search</span>
-    </a>
-    <a class="tab-item" href="#">
-        <span class="icon icon-gear"></span>
-        <span class="tab-label">Settings</span>
-    </a>
-</nav>
-
-
-<!--<div class="footer push ">
-    <div class="front-buttons footer push text-center">
-        <button type="button" class="btn btn-lg btn-success" id="new-bet-btn" data-toggle="modal" data-target="#new-bet-mod">New Bet</button>
-        <button type="button" class="btn btn-lg btn-warning" id="audio-bet-btn">I'm Drunk</button>
-    </div>
-</div>-->
-<!-- end footer -->
-
-
-<!-- -------------------------------------------------------------- -->
-<!-- Bootstrap Modal for new-bet-btn -->
-
-    <header class="bar bar-nav">
-        <a class="icon icon-close pull-right" href="#myModalexample"></a>
-        <h1 class="title">Modal</h1>
-    </header>
-</div>
-
-
-<div class="modal fade" id="new-bet-mod" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-                <h4 class="modal-title text-center" id="myModalLabel">Add A New Bet</h4>
-            </div>
-            <div class="modal-body">
-
-                <!-- Form for adding new bet -->
-                <form class="form-horizontal" role="form" name="newBetForm" >
-
-                    <textarea class="form-control" name="content" id="new-bet-content" rows="3" ng-model="bets.bet" placeholder="Enter bet terms" ng-minlength=3 required ></textarea>
-                    <div class="col-xs-6">
-                        <div class="form-group">
-                            <label for="bet-participants">Bet Participants</label>
-                            <input type="text" class="form-control" name="participants" id="bet-participants" ng-model="bets.name" placeholder="Who are you betting?" ng-minlength="2" required />
                         </div>
                     </div>
-                    <div class="col-xs-6">
-
-                        <div class="form-group">
-                            <label for="bet-prize">The Bet Prize</label>
-                            <input type="text" class="form-control" id="bet-prize" placeholder="What are you betting?" ng-minlength="3" />
-                        </div>
-                    </div>
-                    <div class="col-xs-12">
-                        <div class="form-group">
-                            <label for="bet-deadline">Optional Deadline</label>
-                            <input type="date" class="form-control" id="bet-deadline" />
-                        </div>
-                    </div>
-                    <!-- validation error message -->
-			      		<span ng-show="newBetForm.$invalid && newBetForm.$dirty">
-			      			Content and participants fields are required.
-			      		</span>
-
-
-                </form>
-            </div>
-
-            <div class="modal-footer">
-                <button type="button" ng-click="cancelBet()" class="btn btn-default" data-dismiss="modal">Close</button>
-                <button type="button" ng-disabled="newBetForm.$invalid" ng-click="SaveBet()" class="btn btn-primary" data-dismiss="modal">Save Bet</button>
-            </div>
-        </div><!-- /.modal-content -->
-    </div><!-- /.modal-dialog -->
-</div><!-- /.modal -->
-<!--End Bootstrap Modal for new-bet-btn -->
-
-
-<!-- -------------------------------------------------------------- -->
-<!-- Modal for user validation-->
-<div class="modal fade" id="validation_form" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-                <h4 class="modal-title" id="myModalLabel">Create user</h4>
-            </div>
-            <div class="modal-body">
-                <form role="form" name="authForm" >
-                    <div class="form-group">
-                        <label for="exampleInputEmail1">Email address</label>
-                        <input type="email" class="form-control" id="authEmail" ng-model="user.mail" placeholder="Enter email" required />
-                    </div>
-                    <div class="form-group">
-                        <label for="exampleInputPassword1">Password</label>
-                        <input type="password" class="form-control" id="authPass" ng-minlength="4" ng-model="user.password" placeholder="Password" required />
-                    </div>
-						<span ng-show="authForm.$invalid && authForm.$dirty">
+                </div>
+                <p>
+					<span ng-show="authForm.$invalid && authForm.$dirty">
 			      			Email and Password fields are required.
-				  		</span>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-lg btn-primary" ng-disabled="authForm.$invalid" ng-click="submitToken($event)">Save changes</button>
+				  	</span>
+                </p>
+                <p toggle="off" bubble="" target="validation_form">
+                    <span class="btn btn-primary" ng-disabled="authForm.$invalid" ng-click="submitToken($event)">Login</span>
+                    <span class="btn btn-default" ng-click="loadAndShowRegistrationPage()">New User</span>
+                </p>
+
             </div>
         </div>
     </div>
 </div>
-<!--End Modal for user validation-->
+<!-- END USER LOGIN OVERLAY -->
 
-<!-- -------------------------------------------------------------- -->
+<!-- NEW USER OVERLAY -->
 
-<!-- Modal for displaying bet from list-->
-<div class="modal fade" id="inspectedBet" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-                <h4 class="modal-title text-center" id="myModalLabel">Selected Bet</h4>
-            </div>
-            <div class="modal-body">
-                <div class="show-bet-content">{{selectedBet.bet}}</div>
-                <div class="show-bet-participants text-center"><strong>Bet Made with:</strong>  {{selectedBet.name}}</div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-default" data-dismiss="modal">Edit Bet</button>
-                <button type="button"  class="btn btn-alert" data-dismiss="modal">Delete Bet</button>
+<div class="overlay ng-scope" id="new_user_form" toggleable="" parent-active-class="overlay-in" active-class="overlay-show">
+    <div class="overlay-inner">
+        <div class="overlay-background"></div>
+        <div class="overlay-content">
+            <div class="overlay-body">
+
+                <h4 class="overlay-title">New Bet</h4>
+                <div class="form-group container-fluid">
+                    <div class="row">
+                        <div class="col-sm-10">
+                            <input type="email" ng-model="user.mail" placeholder="Enter email" bs-input="" class="ng-scope ng-pristine ng-valid form-control" required/>
+                            <input type="password" class="ng-pristine ng-valid needsclick form-control" ng-minlength="4" ng-model="user.password" placeholder="Password" required />
+
+                        </div>
+                    </div>
+                </div>
+                <p>
+					<span ng-show="authForm.$invalid && authForm.$dirty">
+			      			Email and Password fields are required.
+				  	</span>
+                </p>
+                <p toggle="off" bubble="" target="new_user_form">
+                    <span class="btn btn-primary" ng-disabled="authForm.$invalid" ng-click="registerUser($event)">Add User</span>
+                    <span class="btn btn-default" ng-click="loadAndShowLoginPage()">Cancel</span>
+                </p>
+
             </div>
         </div>
     </div>
 </div>
-<!--End Modal for displaying bet from list-->
+<!-- END NEW USER OVERLAY -->
+
+
+
+
+<div class="app has-navbar-top has-navbar-bottom">
+    <!-- Navbar -->
+    <div class="navbar navbar-app navbar-absolute-top">
+
+        <div class="navbar-brand navbar-brand-center" yield-to="title">
+            <span class="ng-scope">Overlays</span>
+        </div>
+
+        <div class="btn-group pull-left">
+            <div ng-click="toggle('mainSidebar')" class="btn btn-navbar sidebar-toggle">
+                <i class="fa fa-bars"></i> Menu
+            </div>
+        </div>
+
+        <div class="btn-group pull-right" yield-to="navbarAction">
+            <div ng-click="toggle('rightSidebar')" class="btn btn-navbar ng-scope">
+                <i class="fa fa-comment"></i> Chat
+            </div>
+        </div>
+    </div>
+
+    <div class="navbar navbar-app navbar-absolute-bottom">
+        <div class="btn-group justified">
+            <a href="#new-bet-mod" class="btn btn-navbar" toggle="on"> <i class="fa fa-plus fa-navbar"></i>New Bet<i class="fa fa-plus fa-navbar"></i></a>
+
+        </div>
+    </div>
+
+    <div class="app-body" ng-class="{loading: loading}">
+        <div ng-show="loading" class="app-content-loading ng-hide">
+            <i class="fa fa-spinner fa-spin loading-spinner"></i>
+        </div>
+
+
+        <!-- NG VIEW END-->
+
+        <div class="app-content ng-scope" ng-hide="loading">
+
+
+            <div class="scrollable ng-scope" style="max-height:99999px">
+                <div class="scrollable-content" style="overflow: auto; -webkit-overflow-scrolling: touch;">
+                    <div class="section section-break container">
+                        <a href="#overlay1" class="btn btn-default" toggle="on">Show Overlay 1</a>
+                        <a href="#overlay2" class="btn btn-default" toggle="on">Show Overlay 2</a>
+                    </div>
+
+                    <div class="section container">
+                        <h4>Title</h4>
+                        <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Aliquid, autem, culpa rerum odio sed esse officia quae nulla corporis laudantium necessitatibus dolores dolore nam eum exercitationem aut porro. Autem, nostrum.</p>
+                        <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Tenetur, inventore, doloremque debitis accusamus qui pariatur aut ullam id reprehenderit impedit explicabo perspiciatis recusandae blanditiis quasi maiores quas itaque. Nesciunt, natus.</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- NG VIEW END-->
+
+
+    </div>
+</div>
 
 <!-- Vendor Scripts-->
+<!--
 <script type="text/javascript" src="cordova.js"></script>
+-->
 <script type="text/javascript" src="js/vendor/jquery-2.0.3.min.js"></script>
-<script type="text/javascript" src="js/vendor/ratchet.min.js"></script>
 <script type="text/javascript" src="js/vendor/angular.min.js"></script>
+<script type="text/javascript" src="js/vendor/angular-route.min.js"></script>
 
 <script type="text/javascript" src="js/angular/Controller.js"></script>
-
+<script type="text/javascript" src="js/vendor/mobile-angular-ui.min.js"></script>
+<script type="text/javascript" src="js/vendor/mobile-angular-ui-touch-fastclick.min.js"></script>
+<script type="text/javascript" src="js/vendor/mobile-angular-ui-scrollable-overthrow.min.js"></script>
 </body>
 </html>
 

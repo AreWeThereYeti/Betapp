@@ -1,4 +1,7 @@
-var requiredModules = [
+var requiredModules = [ "ngRoute",
+                        "mobile-angular-ui",
+                        "mobile-angular-ui.touch",
+                        "mobile-angular-ui.scrollable"
 ];
 
 
@@ -7,14 +10,15 @@ var betApp = angular.module('betApp', requiredModules).config(function($httpProv
     $httpProvider.defaults.xsrfHeaderName = 'X-CSRFToken';
 })
 
-betApp.controller('AppCtrl', ['$scope', 'betService', function($scope, betService) {
+
+
+betApp.controller('AppCtrl', ['$scope', 'betService', '$window', function($scope, betService, $window) {
 
     $scope.shortName = 'WebSqlDB';
     $scope.version = '1.0';
     $scope.displayName = 'WebSqlDB';
     $scope.maxSize = 65535;
     $scope.selectedBet;
-
 
     $scope.init = function(){
         /* 		debugging function */
@@ -37,7 +41,7 @@ betApp.controller('AppCtrl', ['$scope', 'betService', function($scope, betServic
 
         $scope.pushBetDBToObject();
 
-    }
+    };
 
     /* selecting a bet from your bet list */
 
@@ -56,7 +60,7 @@ betApp.controller('AppCtrl', ['$scope', 'betService', function($scope, betServic
     /* 	Pressing the button in bet modal */
     $scope.SaveBet = function () {
         console.log("button is pressed");
-        $scope.AddValuesToDB($scope.bets); // HVAD FANNDEN BLIVER SKUBBET TIL DB HER???
+        $scope.AddValuesToDB($scope.bets);
 
         $scope.checkIfBetIsSynced();
 
@@ -100,73 +104,127 @@ betApp.controller('AppCtrl', ['$scope', 'betService', function($scope, betServic
                 // this line actually creates the table User if it does not exist and sets up the three columns and their types
                 // note the UserId column is an auto incrementing column which is useful if you want to pull back distinct rows
                 // easily from the table.
-                tx.executeSql( 'CREATE TABLE IF NOT EXISTS Auth(email varchar, password varchar)', []);
+                tx.executeSql( 'CREATE TABLE IF NOT EXISTS Auth(email varchar, password varchar, token varchar)', []);
 
                 // logout should remove user from database after pushing all bets to the server, and give an error/"are you sure" message if all bet have not been pushed
 
                 tx.executeSql( 'CREATE TABLE IF NOT EXISTS Bet(Id INTEGER PRIMARY KEY AUTOINCREMENT, _bet_description varchar, _participant varchar, _timestamp int, _comments varchar, _is_synced, _author varchar, _id varchar)', []);
 
             },
-            function error(err){alert('error on init local db ' + err)}, function success(){console.log("database created")}
-        )
-    }
+            function error(err){
+                alert('error on init local db ' + err);
+            },
+            function success(){
+                console.log("database created");
+                // fill db with user info here??
+            });
+    };
 
     $scope.checkValidation = function(){
-        // initial variables
 
         $scope.db.transaction(function (tx){
             tx.executeSql('SELECT * FROM Auth', [], function (tx, result){  // Fetch records from WebSQL
                 var dataset = result.rows;
                 if (dataset.length == 0 ){
-                    $scope.loadAndShowRegistrationPage()
+                    $scope.loadAndShowLoginPage();
                 }
                 else if(!!dataset.length){
                     $scope.email = dataset.item(0).email;
                     $scope.password = dataset.item(0).password;
                     console.log("currentUser is: "+ $scope.email);
+
                     // query server for bets belonging to User (author==$scope.email) and (participant==$scope.email)
-                    // push all received bets to local DB where bet id(unique identifier)!=id of bets in the local dbd
-                    /*
-                     var data;
-                     tx.executeSql('SELECT * FROM Bet', [], function (tx, result){  // Fetch records from WebSQL
-                     data = result.rows;
-                     for (var i = 0, item = null; i < dataset.length; i++) {
+                    $scope.db.transaction(function (tx){
+                        tx.executeSql('SELECT * FROM Bet', [], function (tx, result){  // Fetch records from WebSQL
+                                $scope.localBets = result.rows;},
+                            function error(err) {
+                                console.log(err)
+                            });
+                    });
 
-                     item = dataset.item(i);
+                    betService.getAllBetsForUser(dataset.item(0).email) //probably an async function => should use promises
+                        .then(function(data){
+                            console.log("Bets for user: "+$scope.email+" - "+JSON.stringify(data));
+                            // iterate through data array and push each bet entry to DB
+                            angular.forEach(data, function(bet){
+                                $scope.addExternalBetsToDB(bet);
+                            });
+                        });
 
-                     tx.executeSql('INSERT INTO Bet(_bet_description, _participant, _author, _id) VALUES ("'+bet.bet+'", "'+bet.name+'","'+$scope.email+'", "'+item['_id']+'") WHERE');
-                     }
-                     });
-                     */
 
+
+                    $scope.$apply();
                 }
             });
         });
-    }
+    };
+    // helper function that takes two betArrays looks for overlapping bets, and an array with only new bets that does not overlap the existing localBets
+    $scope.compareBets = function(localBets, newBets){
+        var localBetsIds = {};
+        var newBetsIds = {};
+        var result = [];
+
+        angular.forEach(localBets, function (el, i) {
+            localBetsIds[el._id] = localBets[i];
+        });
+
+        angular.forEach(newBets, function (el, i) {
+            newBetsIds[el._id] = newBets[i];
+        });
+
+        for (var i in newBetsIds) {
+            if (!localBetsIds.hasOwnProperty(i)) {
+                result.push(newBetsIds[i]); // now results are local...
+            }
+        }
+        return result;
+
+
+    };
+
+    $scope.addExternalBetsToDB = function(newBet){
+        // assumes that bets without author value are user generated and bets with are externally added. They must therefore only be added if they don't already exist in the DB.
+        console.log("adding external bet with author");
+        $scope.db.transaction(function(transaction) {
+            transaction.executeSql('INSERT INTO Bet (_bet_description, _participant, _author, _id, _is_synced) SELECT "'+newBet.bet+'", "'+newBet.name+'","'+newBet.author+'","'+newBet._id+'",1 WHERE NOT EXISTS (SELECT 1 FROM Bet WHERE _id = "'+newBet._id+'") ' );
+        },function error(err){console.log('error on save to local db : ' + JSON.stringify(err))}, function success(){
+            $scope.$apply(
+                $scope.bets.push({
+                    bet: newBet.bet,
+                    name: newBet.name
+                    // only pushes name and bet => should push all bet data...
+                })
+            );
+        });
+
+    };
 
     // this is the function that puts values into the database from page #home
     $scope.AddValuesToDB = function(bet) {
 
 
         // this is the section that actually inserts the values into the User table
+
+        console.log("adding new bet with current user at author");
         $scope.db.transaction(function(transaction) {
             transaction.executeSql('INSERT INTO Bet(_bet_description, _participant, _author) VALUES ("'+bet.bet+'", "'+bet.name+'","'+$scope.email+'")');
-        },function error(err){alert('error on save to local db : ' + err.err)}, function success(){
+        },function error(err){console.log('error on save to local db : ' + err.err)}, function success(){
             $scope.$apply(
                 $scope.bets.push({
                     bet: bet.bet,
                     name: bet.name
-
+                    // only pushes name and bet => should push all bet data...
                 })
             );
         });
-        return false;
-    }
 
-    $scope.pushBetDBToObject = function (){
+        return false;
+    };
+
+    $scope.pushBetDBToObject = function () {
         $scope.bets = [];
-        $scope.db.transaction(function (tx){
-            tx.executeSql('SELECT * FROM Bet', [], function (tx, result){
+        $scope.db.transaction(function (tx) {
+            tx.executeSql('SELECT * FROM Bet', [], function (tx, result) {
                 var dataset = result.rows;
                 for (var i = 0, item = null; i < dataset.length; i++) {
 
@@ -176,16 +234,17 @@ betApp.controller('AppCtrl', ['$scope', 'betService', function($scope, betServic
                         $scope.bets.push({
                             bet: item['_bet_description'],
                             name: item['_participant'],
-                            user: item['_author'],
+                            user: item['_author']
 
                         })
                     );
                 }
             });
-        },function error(err){
+        }, function error(err) {
             console.log(err)
-        }, function success(){});
-    }
+        }, function success() {
+        });
+    };
 
     $scope.checkIfBetIsSynced = function (){
         $scope.betsToPush = [];
@@ -295,26 +354,120 @@ betApp.controller('AppCtrl', ['$scope', 'betService', function($scope, betServic
     }
     /*   Registration */
     $scope.loadAndShowRegistrationPage = function(){
-        $('#validation_form').modal('show')
+
+        if($('#validation_form').is(":visible")){
+            $('#validation_form').modal('hide');
+        }
+       // $('#new_user_form').modal('show');
+    };
+
+    $scope.loadAndShowLoginPage = function(){
+        if($('#new_user_form').is(":visible")){
+            $('#new_user_form').modal('hide');
+        }
+       // $('#validation_form').modal('show');
+
+    };
+
+    $scope.registerUser = function(){
+
+        console.log('registering new user: '+$scope.user.mail);
+
+        betService.pushUserToServer($scope.user)
+            .then(function(data) {
+                // this callback will be called asynchronously
+                // when the response is available
+                if(!!data.error){
+                    console.log("error: "+ data.error);
+                    alert(data.error);
+
+                }else{
+
+                    console.log("user is uploaded, storring loacally and in session");
+                    $window.sessionStorage.token = data.token;
+
+                    $scope.$root.db.transaction(function(transaction) {
+                            transaction.executeSql('INSERT INTO AUTH (email, password,token) VALUES ("'+$scope.user.mail+'", "'+$scope.user.password+'", "'+data.token+'")',[]);
+                        },function error(err){
+                            alert("Ups, noget gik galt. Prøv venligst igen")
+                            console.log(err)
+                        }, function success(){
+                            $('#new_user_form').modal('hide');
+                            $('#validation_form').modal('hide');
+                            $scope.checkValidation();
+
+                        }
+                    );
+                }
+            }, function(err) {
+                // called asynchronously if an error occurs
+                // or server returns response with an error status.
+                console.log("Error on PushToServer: ");
+            });
+
     }
 
-    $scope.submitToken = function($event){
-        // this is the section that actually inserts the values into the User table
-        console.log('submitting access token')
-        $event.preventDefault();
+    $scope.logoutUser = function(){
+        console.log('logging out user: '+ $scope.email);
+
+        // Checks if bets are synced before lofout, needs to throw an error if this is not the case!!!
+        $scope.checkIfBetIsSynced();
+        // Erase the token if the user logs out
+        delete $window.sessionStorage.token;
         $scope.$root.db.transaction(function(transaction) {
-                transaction.executeSql('INSERT INTO AUTH (email, password) VALUES ("'+$scope.user.mail+'", "'+$scope.user.password+'")',[]);
+                $scope.dropTables();
             },function error(err){
                 alert("Ups, noget gik galt. Prøv venligst igen")
                 console.log(err)
             }, function success(){
-                $('#validation_form').modal('hide');
+                $('#logOut').modal('hide');
+                $scope.$apply(
+                    /*
+                     $scope.user.mail = "",
+                     $scope.user.password = ""
+                     */
+                );
+                $scope.init();
+
             }
         );
-
-        return false;
     }
 
+    $scope.submitToken = function(){
+        // this is the section that actually inserts the values into the User table
+        console.log('requesting access token');
+
+        betService.checkUserWithServer($scope.user)
+            .then(function(data) {
+                // this callback will be called asynchronously
+                // when the response is available
+                if(!!data.error){
+                    console.log("error: "+ data.error);
+                    alert("Wrong email or password. Please try again.")
+
+                }else{
+                    console.log("Success!!" + data.token);
+                    console.log("user is uploaded, storring loacally and in session");
+                    $window.sessionStorage.token = data.token;
+
+                    // ADD DB QUERY: CHECK IF 'user' (user.email&user.password) matches a user in the DB 'auth' table. if yes then generate and return token.
+
+                    $scope.$root.db.transaction(function(transaction) {
+                            transaction.executeSql('INSERT INTO AUTH (email, password, token) VALUES ("'+$scope.user.mail+'", "'+$scope.user.password+'","'+data.token+'" )',[]);
+                        },function error(err){
+                            alert("Ups, noget gik galt. Prøv venligst igen")
+                            console.log(err)
+                        }, function success(){
+                            $('#new_user_form').modal('hide');
+                            $('#validation_form').modal('hide');
+                            $scope.checkValidation();
+
+                        }
+                    );
+                }
+            })
+
+    }
 }]);
 
 betApp.controller('BetListCtrl', ['$scope', '$element', '$attrs','$transclude', function ($scope, $element, $attrs, $transclude) {
@@ -349,7 +502,7 @@ betApp.directive('betList', function() {
             bets: '='
         },
         /* 	    template: '<tr class="betList" ng-click="handleClick()"><td> {{bet.bet}}</td><td>{{bet.name}}</td></tr>', */
-        templateUrl: '../js/angular/templates/betList.html',
+        templateUrl: 'src/templates/betList.html',
         controller: 'BetListCtrl',
         link:function(scope,element,attrs){
 
@@ -363,15 +516,30 @@ betApp.directive('betList', function() {
 
 betApp.service('betService', ['$http', '$q', function($http, $q){
 
-    var serverURL = 'http://betappserver.herokuapp.com';
+    var serverURL = 'http://localhost:3000'/* 'http://betappserver.herokuapp.com' */; //on localhost while developing!!!!
 
     var	getAllBets = function(){
 
         return $http({
             method: 'GET',
-            url: serverURL + '/bets'	/* should probably not display the full URL, but instead hide it in variables */
+            url: serverURL + '/bets'
 
         })
+    };
+
+    var	getAllBetsForUser = function(user){
+        var d = $q.defer();
+
+        $http({
+            method: 'GET',
+            url: serverURL + '/bets/' + user
+
+        }).success(function(data, status, headers){
+            d.resolve(data);
+        }).error(function(data, status, headers){
+            d.reject(status);
+        });
+        return d.promise;
     };
 
     var pushBetsToServer = function(bet){
@@ -389,9 +557,89 @@ betApp.service('betService', ['$http', '$q', function($http, $q){
         return d.promise;
     };
 
+    var checkUserWithServer = function(user){
+
+        var d = $q.defer();
+        $http({
+            method	: 'POST',
+            url		: serverURL + '/auth',
+            data    : angular.toJson(user)
+        }).success(function(data, status, headers){
+            d.resolve(data);
+        }).error(function(data, status, headers){
+            d.reject(status);
+        });
+        return d.promise;
+    };
+
+    var pushUserToServer = function(user){
+
+        var d = $q.defer();
+        $http({
+            method	: 'POST',
+            url		: serverURL + '/auth/new',
+            data    : angular.toJson(user)
+        }).success(function(data, status, headers){
+            d.resolve(data);
+
+        }).error(function(data, status, headers){
+            d.reject(status);
+        });
+        return d.promise;
+    };
+
     return{
+        getAllBetsForUser: getAllBetsForUser,
         getAllBets: getAllBets,
-        pushBetsToServer: pushBetsToServer
+        pushBetsToServer: pushBetsToServer,
+        pushUserToServer: pushUserToServer,
+        checkUserWithServer: checkUserWithServer
     };
 
 }]);
+
+
+// Authorization interceptor
+
+betApp.factory('authInterceptor', function ($rootScope, $q, $window) {
+
+    console.log('DEBUGGING: intercepting ....');
+
+    /*
+     // may contain a scope issuse... tries to access local db for token -- doing sessionStorage instead
+
+     var token;
+     $scope.db.transaction(function (tx){
+     tx.executeSql('SELECT * FROM Auth', [], function (tx, result){
+     var dataset = result.rows;
+     if (!!dataset.length){
+     token = dataset[0].token;
+     }
+     },function error(err){
+     console.log(err);
+     }, function success(){});
+     // Erase the token if the user fails to log in
+
+     */
+    return {
+        request: function (config) {
+            config.headers = config.headers || {};
+            if ($window.sessionStorage.token) {
+                config.headers.Authorization = 'Bearer ' + $window.sessionStorage.token;
+            }
+            return config;
+        },
+        responseError: function (rejection) {
+            if (rejection.status === 401) {
+                // handle the case where the user is not authenticated
+            }
+            return $q.reject(rejection);
+        }
+    };
+});
+
+betApp.config(function ($httpProvider) {
+    $httpProvider.interceptors.push('authInterceptor');
+});
+
+
